@@ -10,3 +10,5 @@ jupyter==1.1.1
 jax==0.4.38
 jaxlib==0.4.38
 opt_einsum==3.4.0
+pytorch-tabnet==4.1.0
+torch

@@ -2,7 +2,7 @@
 
 ## Context
 Your notebook trains two models to predict whether a device is `Ewaste_Ready`:
-1. `LogisticRegression`
+1. `TabNetClassifier` (TabNet)
 2. `XGBClassifier` (XGBoost)
 
 Both models receive cleaned and engineered features (price behavior, usage, condition, lifespan-related ratios), then output a probability from 0 to 1 for the class “ready”.
@@ -13,51 +13,48 @@ Both models receive cleaned and engineered features (price behavior, usage, cond
 A model architecture is the internal design of how a model learns patterns and makes decisions.
 
 Think of architecture as the “brain style”:
-- Some brains use a **single weighted checklist**.
+- Some brains use **step-by-step focused attention**.
 - Others use **many tiny decision rules combined together**.
 
 In your case:
-- `LogisticRegression` = one weighted checklist.
+- `TabNetClassifier` = a neural network that chooses important features step by step.
 - `XGBClassifier` = many small decision trees working as a team.
 
 ---
 
-## 1) Logistic Regression (simple, transparent baseline)
+## 1) TabNet Classifier (deep tabular model)
 
 ## Layman analogy
-Imagine a scorecard used by an inspector:
-- “High used duration” adds risk points.
-- “Poor condition” adds risk points.
-- “Strong build quality” may reduce risk points.
+Imagine a smart inspector who does not look at everything at once.
 
-The inspector adds all points and then converts the final score into a chance (%) that the item is e-waste ready.
+Instead, they work in rounds:
+1. First, they focus on the most important clues.
+2. Then they choose the next most useful clues.
+3. They repeat this until they are confident.
+
+That is what TabNet does: it learns to “pay attention” to different features at different decision steps.
 
 ## Architecture
-`LogisticRegression` is a **linear model**. It computes one weighted sum:
+`TabNetClassifier` is a **deep learning model for tabular data** with sequential attention.
 
-- Each input feature has a coefficient (weight).
-- Positive weight pushes prediction toward class 1.
-- Negative weight pushes prediction toward class 0.
+- It has multiple decision steps.
+- At each step, it creates a feature mask (which features to focus on).
+- Then it builds an internal decision representation.
+- Final output is converted into class probability.
 
-Then it applies the sigmoid function to map score to probability:
-
-$$
-p = \sigma(z) = \frac{1}{1 + e^{-z}}
-$$
-
-where
+Conceptually, the prediction score can be thought of as a sum of step contributions:
 
 $$
-z = w_1x_1 + w_2x_2 + \cdots + w_nx_n + b
+\hat{y}(x)=\sum_{t=1}^{T} d_t(x), \quad p(y=1\mid x)=\sigma(\hat{y}(x))
 $$
 
 ## How it learns
-During training, it repeatedly adjusts weights so predicted probabilities match known labels as closely as possible.
+During training, TabNet updates its neural weights and feature-attention masks using backpropagation, so predictions better match known labels.
 
-In your notebook this learning is regularized (controlled complexity), so the model does not overreact to noise.
+It also uses sparsity regularization so it does not rely on every feature all the time.
 
 ## Why preprocessing matters here
-Because it is linear, it works best when:
+Even though TabNet is nonlinear, preprocessing still helps:
 - numeric features are scaled,
 - missing values are handled,
 - categorical values are encoded.
@@ -65,13 +62,14 @@ Because it is linear, it works best when:
 Your pipeline does exactly that before fitting.
 
 ## Strengths
-- Easy to explain.
-- Fast to train.
-- Coefficients provide direct interpretability.
+- Strong on structured/tabular data.
+- Captures nonlinear effects and interactions.
+- Provides native feature importance for interpretability.
 
 ## Limitations
-- Assumes roughly linear relationships in transformed feature space.
-- Can miss complex interactions unless manually engineered.
+- More computationally expensive than simple linear models.
+- Needs hyperparameter tuning.
+- Can overfit if not validated carefully.
 
 ---
 
@@ -113,7 +111,7 @@ This process lets it model complex nonlinear patterns and feature interactions a
 It can learn thresholds and combinations such as:
 - “If condition is low **and** usage-to-expiry is high, risk jumps sharply.”
 
-A linear model may struggle to capture such logic without explicit interaction terms.
+This is similar to TabNet’s nonlinear behavior, but done using boosted trees.
 
 ## Strengths
 - High predictive power.
@@ -121,7 +119,7 @@ A linear model may struggle to capture such logic without explicit interaction t
 - Handles mixed feature effects well.
 
 ## Limitations
-- Less transparent than logistic regression.
+- Less transparent than very simple linear baselines.
 - More tuning required.
 - Easier to overfit without careful validation.
 
@@ -148,7 +146,7 @@ This setup makes comparison fair:
 
 ## How each model “thinks” in plain terms
 
-- `LogisticRegression`: “I use one transparent formula with weighted factors.”
+- `TabNetClassifier`: “I choose important features step by step, then combine those decisions.”
 - `XGBClassifier`: “I build many simple if-then trees, each fixing prior mistakes.”
 
 Both output probabilities, then convert to class labels using a threshold (typically 0.5).
@@ -167,15 +165,15 @@ Because these same variables are present in the training features, models can re
 ---
 
 ## Which model to choose (layman rule)
-- Choose `LogisticRegression` when you need **clarity and explanation**.
-- Choose `XGBClassifier` when you need **maximum predictive accuracy** and can support stronger governance/auditing.
+- Choose `TabNetClassifier` when you want a modern deep model for tabular data with built-in feature-importance signals.
+- Choose `XGBClassifier` when you want a very strong tree-based baseline with robust tabular performance.
 
-If performance is close, prefer `LogisticRegression` for simpler deployment and communication.
+If performance is close, prefer the model with better stability and easier explanation in your validation results.
 
 ---
 
 ## One-line summary
-- `LogisticRegression` = simple weighted scorecard.
+- `TabNetClassifier` = step-by-step attention-based tabular neural network.
 - `XGBClassifier` = team of small decision trees that improve each other.
 
 Both are valid; the better choice depends on whether your priority is interpretability or predictive power.
