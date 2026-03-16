@@ -2,3 +2,17 @@ dataset/
 e-waste/
 EDA_DOCUMENTATION.md
 MODEL_ARCHITECTURE_LAYMAN_GUIDE.md
+SETUP_GUIDE.md
+
+# Python virtual environments
+.venv/
+.venv-1/
+.venv39/
+venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Jupyter
+.ipynb_checkpoints
